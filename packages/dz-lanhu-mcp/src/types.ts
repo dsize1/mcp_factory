@@ -15,6 +15,8 @@ export type LanhuUrlType = 'invite' | 'product' | 'stage' | 'design';
 export interface ParsedLanhuUrl {
   /** URL 类型 */
   type: LanhuUrlType;
+  /** 团队/项目组 ID */
+  teamId?: string;
   /** 项目 ID */
   projectId?: string;
   /** 产品文档 ID */
@@ -104,9 +106,9 @@ export interface LanhuDesign {
   /** 创建者 ID */
   creator_id: string;
   /** 创建时间 */
-  created_at: string;
+  created_at?: string;
   /** 更新时间 */
-  updated_at: string;
+  updated_at?: string;
   /** 缩略图 URL */
   thumb_url?: string;
   /** 原始图 URL */
@@ -221,9 +223,9 @@ export interface LanhuMessage {
   /** 被提醒用户列表 */
   mentions?: string[];
   /** 创建时间 */
-  created_at: string;
+  created_at?: string;
   /** 更新时间 */
-  updated_at: string;
+  updated_at?: string;
 }
 
 /** 发布留言请求参数 */
@@ -401,6 +403,22 @@ export function isMcpError(error: unknown): error is McpError {
 }
 
 // ============================================================
+// HTTP 响应类型
+// ============================================================
+
+/** HTTP 响应 */
+export interface HttpResponse<T = unknown> {
+  /** 响应数据 */
+  data: T;
+  /** HTTP 状态码 */
+  status: number;
+  /** 响应头 */
+  headers: Record<string, string>;
+  /** 响应时间（毫秒） */
+  duration: number;
+}
+
+// ============================================================
 // API 响应类型
 // ============================================================
 
@@ -489,6 +507,274 @@ export interface ScreenshotResult {
 }
 
 // ============================================================
+// 项目/文档信息类型
+// ============================================================
+
+/** 项目信息 */
+export interface ProjectInfo {
+  /** 项目 ID */
+  id: string;
+  /** 项目名称 */
+  name: string;
+  /** 文件夹名称 */
+  folder_name?: string;
+  /** 创建者名称 */
+  creator_name?: string;
+  /** 成员数量 */
+  member_cnt?: number;
+  /** 保存路径 */
+  save_path?: string;
+}
+
+/** 产品文档信息 */
+export interface ProductDocument {
+  /** 文档 ID */
+  id: string;
+  /** 文档名称 */
+  name: string;
+  /** 文档类型 */
+  type: string;
+  /** 文档状态 */
+  status: number;
+  /** 创建时间 */
+  created_at?: string;
+  /** 更新时间 */
+  updated_at?: string;
+  /** 创建者信息 */
+  creator?: {
+    id: string;
+    name: string;
+  };
+}
+
+/** 文档版本信息 */
+export interface DocVersion {
+  /** 版本 ID */
+  id: string;
+  /** 版本信息 */
+  version_info?: string;
+  /** JSON URL */
+  json_url: string;
+  /** 创建时间 */
+  created_at?: string;
+}
+
+/** 文档信息 */
+export interface DocInfo {
+  /** 文档 ID */
+  id: string;
+  /** 文档名称 */
+  name: string;
+  /** 文档类型 */
+  type: string;
+  /** 版本列表 */
+  versions: DocVersion[];
+  /** 创建时间 */
+  create_time?: string;
+  /** 更新时间 */
+  update_time?: string;
+}
+
+/** 切图信息（处理后，包含多倍图 formats） */
+export interface SliceInfo {
+  /** 切图 ID */
+  id: string;
+  /** 切图名称 */
+  name: string;
+  /** 图层路径 */
+  layerPath: string;
+  /** 切图 URL */
+  url: string;
+  /** 切图宽度 */
+  width: number;
+  /** 切图高度 */
+  height: number;
+  /** 多倍图 URL 映射 */
+  formats?: Record<string, string>;
+  /** CSS 属性 */
+  css?: {
+    width?: string;
+    height?: string;
+    backgroundColor?: string;
+    opacity?: string;
+    border?: string;
+    borderRadius?: string;
+    boxShadow?: string;
+    fontSize?: string;
+    fontWeight?: string;
+    color?: string;
+    lineHeight?: string;
+    letterSpacing?: string;
+    padding?: string;
+    margin?: string;
+  };
+}
+
+/** Sketch/Figma JSON 图层数据结构 */
+export interface SketchLayer {
+  /** 图层名称 */
+  name?: string;
+  /** 图层类型 */
+  type?: string;
+  /** 图片数据 */
+  image?: {
+    /** 图片 URL */
+    imageUrl?: string;
+    /** SVG URL */
+    svgUrl?: string;
+    /** 图片尺寸 */
+    size?: { width: number; height: number };
+  };
+  /** DDS 图片数据（旧版 Sketch） */
+  ddsImage?: {
+    /** 图片 URL */
+    imageUrl?: string;
+    /** 图片尺寸 */
+    size?: { width: number; height: number };
+  };
+  /** 是否有导出图片 */
+  hasExportImage?: boolean;
+  /** 是否有导出 DDS 图片 */
+  hasExportDDSImage?: boolean;
+  /** 子图层 */
+  layers?: SketchLayer[];
+  /** 是否已导出 */
+  exported?: boolean;
+  /** 宽度 */
+  width?: number;
+  /** 高度 */
+  height?: number;
+  /** 样式信息 */
+  style?: {
+    MSStrokeColor?: any;
+    MSAvoidShadow: boolean;
+    MSColorStyleValue?: any;
+    opacity?: number;
+    _class?: string;
+    blendMode?: number;
+  };
+  /** 富文本属性 */
+  attributedString?: {
+    attributes?: Array<{
+      stringAttributes?: {
+        _class?: string;
+        strokeWidth?: number;
+        glowBlur?: number;
+        [key: string]: any;
+      };
+    }>;
+  };
+}
+
+/** Sketch/Figma JSON 数据结构 */
+export interface SketchData {
+  /** info 数组 */
+  info?: Array<{
+    name: string;
+    ddsImage?: {
+      imageUrl: string;
+      size: { width: number; height: number };
+    };
+    sliceScale?: number;
+  }>;
+  /** 元数据 */
+  meta?: {
+    host?: { name: string };
+    sliceScale?: number;
+    exportScale?: number;
+  };
+  /** 切图缩放比例 */
+  sliceScale?: number;
+  /** 导出缩放比例 */
+  exportScale?: number;
+  /** 顶层图层 */
+  layers?: SketchLayer[];
+  /** 画布 */
+  artboard?: {
+    layers?: SketchLayer[];
+  };
+}
+
+// ============================================================
+// 蓝湖 API 内部响应类型
+// ============================================================
+
+/** 蓝湖 API 通用响应 */
+export interface LanhuApiResponse<T = any> {
+  /** 响应码 */
+  code: string;
+  /** 响应消息 */
+  msg: string;
+  /** 响应数据 */
+  result: T;
+}
+
+/** 设计图 API 响应 */
+export interface DesignApiResponse {
+  /** 响应码 */
+  code: string;
+  /** 响应消息 */
+  msg: string;
+  /** 响应数据 */
+  result: {
+    id: string;
+    name: string;
+    project_id: string;
+    stage_id: string;
+    creator_id: string;
+    created_at: string;
+    updated_at: string;
+    thumb_url?: string;
+    original_url?: string;
+    versions: Array<{
+      id: string;
+      json_url: string;
+      version_info?: string;
+    }>;
+  };
+}
+
+/** 留言 API 响应 */
+export interface MessageApiResponse {
+  /** 留言 ID */
+  id: string;
+  /** 项目 ID */
+  project_id: string;
+  /** 文档 ID */
+  doc_id?: string;
+  /** 留言摘要 */
+  summary: string;
+  /** 留言内容 */
+  content: string;
+  /** 留言类型 */
+  type: string;
+  /** 发布用户 */
+  author: string;
+  /** 被提醒用户列表 */
+  mentions?: string[];
+  /** 创建时间 */
+  created_at: string;
+  /** 更新时间 */
+  updated_at: string;
+}
+
+/** 邀请链接信息 */
+export interface InviteLinkInfo {
+  /** 响应码 */
+  code: string;
+  /** 响应消息 */
+  msg: string;
+  /** 响应数据 */
+  result: {
+    project_id?: string;
+    team_id?: string;
+    folder_name?: string;
+    creator_name?: string;
+    [key: string]: any;
+  };
+}
+
+// ============================================================
 // 工具调用参数类型
 // ============================================================
 
@@ -530,4 +816,80 @@ export interface GetSlicesParams {
 /** 查看协作者参数 */
 export interface GetMembersParams {
   url: string;
+}
+
+// ============================================================
+// Client 方法返回类型
+// ============================================================
+
+/** 获取项目成员列表返回类型 */
+export interface ProjectMembersResult {
+  /** 成员列表 */
+  members: LanhuMember[];
+  /** 协作者访问记录列表 */
+  collaborators: LanhuCollaborator[];
+  /** 项目信息 */
+  projectInfo?: ProjectInfo;
+}
+
+/** 获取产品文档列表返回类型 */
+export interface ProductDocumentsResult {
+  /** 文档列表 */
+  documents: ProductDocument[];
+  /** 默认分组 ID */
+  defaultGroupId?: string;
+  /** 是否需要分组 */
+  needGroup?: boolean;
+  /** 文档总数 */
+  total: number;
+}
+
+/** 获取产品文档详情返回类型 */
+export interface ProductDetailResult {
+  /** 文档 ID */
+  id: string;
+  /** 文档名称 */
+  name: string;
+  /** 文档类型 */
+  type: string;
+  /** 页面列表 */
+  pages: Array<{ id: string; name: string; filename: string }>;
+  /** 创建时间 */
+  createdAt?: string;
+  /** 更新时间 */
+  updatedAt?: string;
+}
+
+/** 获取设计图切图信息返回类型 */
+export interface DesignSlicesResult {
+  /** 设计图 ID */
+  designId: string;
+  /** 设计图名称 */
+  designName: string;
+  /** 切图列表 */
+  slices: SliceInfo[];
+  /** 切图总数 */
+  totalSlices: number;
+}
+
+/** 发布/编辑/删除留言返回类型 */
+export interface MessageActionResult {
+  /** 是否成功 */
+  success: boolean;
+  /** 留言 ID */
+  messageId?: string;
+}
+
+/** 邀请链接信息返回类型 */
+export interface InviteLinkInfoResult {
+  /** 项目 ID */
+  projectId?: string;
+  /** 团队/项目组 ID */
+  teamId?: string;
+  /** 文件夹名称 */
+  folderName?: string;
+  /** 创建者名称 */
+  creatorName?: string;
+  /** 原始响应数据 */
+  raw: any;
 }

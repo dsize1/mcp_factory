@@ -66,6 +66,36 @@ export function normalizeLanhuUrl(url: string): string {
 }
 
 /**
+ * 将 RFC 2822 时间格式转换为中国时区 (UTC+8)
+ */
+export function formatLanhuTime(rfc2822String?: string): string | undefined {
+  if (!rfc2822String || rfc2822String === 'your_lanhu_cookie_here') {
+    return undefined;
+  }
+  
+  try {
+    const date = new Date(rfc2822String);
+    if (isNaN(date.getTime())) {
+      return rfc2822String;
+    }
+    const chinaTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+    return chinaTime.getFullYear().toString() +
+      '-' +
+      String(chinaTime.getMonth() + 1).padStart(2, '0') +
+      '-' +
+      String(chinaTime.getDate()).padStart(2, '0') +
+      ' ' +
+      String(chinaTime.getHours()).padStart(2, '0') +
+      ':' +
+      String(chinaTime.getMinutes()).padStart(2, '0') +
+      ':' +
+      String(chinaTime.getSeconds()).padStart(2, '0');
+  } catch {
+    return rfc2822String;
+  }
+}
+
+/**
  * 解析蓝湖 URL
  * 
  * 从 URL 中提取项目 ID、文档 ID、页面 ID 等信息
