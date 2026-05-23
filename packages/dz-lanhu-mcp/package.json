@@ -1,0 +1,38 @@
+{
+  "name": "@mcp-factory/dz-lanhu-mcp",
+  "version": "1.0.0",
+  "description": "蓝湖 MCP 服务器 - TypeScript 重构版，用于解析蓝湖设计稿和需求文档",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "start": "node dist/index.js",
+    "clean": "rm -rf dist",
+    "type-check": "tsc --noEmit"
+  },
+  "keywords": [
+    "mcp",
+    "lanhu",
+    "蓝湖",
+    "axure",
+    "design",
+    "model-context-protocol"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "mcp-dev-tools": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.3.3"
+  }
+}

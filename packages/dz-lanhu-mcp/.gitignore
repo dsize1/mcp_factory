@@ -1,0 +1,28 @@
+# Build output
+dist/
+*.tsbuildinfo
+
+# Environment files (contains secrets)
+.env
+.env.local
+.env.*.local
+
+# Dependencies
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Logs
+*.log
+logs/
+
+# Data cache (contains user data)
+data/

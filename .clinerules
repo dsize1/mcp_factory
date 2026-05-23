@@ -1,0 +1,25 @@
+# MCP Factory - Claude Rules
+
+## Project Context
+This is an MCP Factory monorepo for developing MCP (Model Context Protocol) servers using TypeScript and the FastMCP framework.
+
+## Key Directories
+- `mcp-dev-tools/` - Core MCP development framework and shared utilities
+- `packages/` - Individual MCP server packages (generated servers go here)
+- `memory-bank/` - Project memory and context files
+
+## Development Guidelines
+1. Always use pnpm for package management
+2. MCP servers should extend `FastMCPServer` from `mcp-dev-tools`
+3. Each MCP server in `packages/` should have its own `package.json`, `tsconfig.json`, and `src/index.ts`
+4. Dependencies shared across packages should be added to the root `package.json` or `mcp-dev-tools`
+5. TypeScript strict mode is enabled - all code must pass type checking
+
+## File Conventions
+- All MCP servers use ES modules (`"type": "module"`)
+- Build output goes to `dist/` directory
+- Source files use `.ts` extension
+- Configuration files extend root `tsconfig.json`
+
+## Memory Bank
+Always check `memory-bank/active-context.md` for current project state before making changes.
