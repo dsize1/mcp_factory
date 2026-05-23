@@ -7,12 +7,15 @@
 
 import { lanhuApi } from './client.js';
 import type {
-  ParsedLanhuUrl,
   LanhuProduct,
   LanhuPage,
   LanhuPageDetail,
   ApiResponse,
 } from '../types.js';
+import { parseLanhuUrl as _parseLanhuUrl } from '../utils/url-parser.js';
+
+/** 重新导出，供外部使用 */
+export { _parseLanhuUrl as parseLanhuUrl };
 
 /**
  * 解析蓝湖邀请链接
@@ -20,41 +23,6 @@ import type {
 export async function resolveInviteLink(url: string): Promise<ApiResponse> {
   // TODO: 实现邀请链接解析逻辑
   throw new Error('Not implemented: resolveInviteLink');
-}
-
-/**
- * 解析蓝湖 URL
- * 从 URL 中提取项目 ID、文档 ID、页面 ID 等信息
- */
-export function parseLanhuUrl(url: string): ParsedLanhuUrl {
-  const result: ParsedLanhuUrl = { url, type: 'product' };
-  
-  try {
-    const parsed = new URL(url);
-    const pathParts = parsed.pathname.split('/').filter(Boolean);
-    
-    // 根据路径判断 URL 类型
-    if (parsed.hostname.includes('lanhuapp.com')) {
-      if (pathParts.includes('web')) {
-        const docIndex = pathParts.indexOf('doc');
-        if (docIndex !== -1 && pathParts.length > docIndex + 2) {
-          result.type = 'product';
-          result.docId = pathParts[docIndex + 1];
-          result.productId = pathParts[docIndex + 2];
-        }
-      } else if (pathParts.includes('stage')) {
-        result.type = 'stage';
-        const pid = parsed.searchParams.get('pid');
-        if (pid) {
-          result.projectId = pid;
-        }
-      }
-    }
-  } catch {
-    // Invalid URL, return defaults
-  }
-  
-  return result;
 }
 
 /**

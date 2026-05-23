@@ -27,6 +27,8 @@ export interface ParsedLanhuUrl {
   stageId?: string;
   /** 设计图 ID */
   designId?: string;
+  /** 邀请码 */
+  inviteCode?: string;
   /** 原始 URL */
   url: string;
 }
@@ -294,6 +296,108 @@ export interface LanhuMember {
   email?: string;
   /** 头像 URL */
   avatar_url?: string;
+}
+
+// ============================================================
+// 错误类型
+// ============================================================
+
+/** McpError 类型标记 Symbol */
+export const MCP_ERROR_TAG = Symbol('McpError');
+
+/** 错误码枚举 */
+export enum ErrorCode {
+  // 通用错误 (1000-1099)
+  INVALID_PARAMS = 'INVALID_PARAMS',
+  UNAUTHORIZED = 'UNAUTHORIZED',
+  FORBIDDEN = 'FORBIDDEN',
+  NOT_FOUND = 'NOT_FOUND',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+  UNKNOWN_ERROR = 'UNKNOWN_ERROR',
+
+  // URL 解析错误 (1100-1199)
+  INVALID_URL = 'INVALID_URL',
+  URL_PARSE_FAILED = 'URL_PARSE_FAILED',
+  UNSUPPORTED_URL_TYPE = 'UNSUPPORTED_URL_TYPE',
+
+  // API 请求错误 (1200-1299)
+  REQUEST_TIMEOUT = 'REQUEST_TIMEOUT',
+  REQUEST_FAILED = 'REQUEST_FAILED',
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  HTTP_ERROR = 'HTTP_ERROR',
+
+  // Cookie 相关错误 (1300-1399)
+  COOKIE_INVALID = 'COOKIE_INVALID',
+  COOKIE_EXPIRED = 'COOKIE_EXPIRED',
+
+  // 缓存错误 (1400-1499)
+  CACHE_READ_FAILED = 'CACHE_READ_FAILED',
+  CACHE_WRITE_FAILED = 'CACHE_WRITE_FAILED',
+  CACHE_EXPIRED = 'CACHE_EXPIRED',
+
+  // 文件操作错误 (1500-1599)
+  FILE_NOT_FOUND = 'FILE_NOT_FOUND',
+  FILE_WRITE_FAILED = 'FILE_WRITE_FAILED',
+  FILE_READ_FAILED = 'FILE_READ_FAILED',
+
+  // 业务逻辑错误 (2000-2999)
+  DESIGN_NOT_FOUND = 'DESIGN_NOT_FOUND',
+  PAGE_NOT_FOUND = 'PAGE_NOT_FOUND',
+  MEMBER_NOT_FOUND = 'MEMBER_NOT_FOUND',
+  SLICE_NOT_FOUND = 'SLICE_NOT_FOUND',
+  MESSAGE_NOT_FOUND = 'MESSAGE_NOT_FOUND',
+}
+
+/** 统一错误类型 */
+export interface McpError {
+  /** MCP 错误类型标记 */
+  [MCP_ERROR_TAG]: true;
+  /** 错误码 */
+  code: ErrorCode;
+  /** 错误消息 */
+  message: string;
+  /** 详细信息（调试用） */
+  details?: Record<string, unknown>;
+  /** 原始错误 */
+  cause?: Error;
+  /** 时间戳 */
+  timestamp: number;
+}
+
+/** 错误工厂函数 */
+export function createMcpError(
+  code: ErrorCode,
+  message: string,
+  options: { details?: Record<string, unknown>; cause?: Error } = {}
+): McpError {
+  return {
+    [MCP_ERROR_TAG]: true,
+    code,
+    message,
+    details: options.details,
+    cause: options.cause,
+    timestamp: Date.now(),
+  };
+}
+
+/** 将 McpError 转换为普通 Error */
+export function mcpErrorToError(error: McpError): Error {
+  const err: McpError & Error = Object.assign(new Error(error.message), error);
+  err.name = error.code;
+  return err as Error;
+}
+
+/** 判断是否为 McpError */
+export function isMcpError(error: unknown): error is McpError {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    MCP_ERROR_TAG in error &&
+    (error as Record<typeof MCP_ERROR_TAG, unknown>)[MCP_ERROR_TAG] === true &&
+    'code' in error &&
+    'message' in error &&
+    'timestamp' in error
+  );
 }
 
 // ============================================================
