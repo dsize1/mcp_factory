@@ -9,7 +9,7 @@
 | 类别 | 已完成 | 待开发 | 总计 | 进度 |
 |------|--------|--------|------|------|
 | **基础设施模块** | 6 | 0 | 6 | 100% |
-| **MCP 工具** | 0 | 14 | 14 | 0% |
+| **MCP 工具** | 2 | 12 | 14 | 14% |
 | **开发文档** | 4 | 0 | 4 | 100% |
 
 ### 已完成的基础设施
@@ -25,7 +25,24 @@
 
 ### 工具实现状态
 
-所有 14 个 MCP 工具的 `src/tools/*.ts` 文件已创建，但 handler 均为 TODO 状态：
+| 工具 | 状态 | 备注 |
+|------|------|------|
+| `lanhu_resolve_invite_link` | ✅ 已实现 | 入口工具 |
+| `lanhu_get_pages` | ✅ 已实现 | 页面列表，已测试通过 |
+| `lanhu_get_designs` | ⏳ Handler TODO | 待实现 |
+| `lanhu_get_design_slices` | ✅ 已实现 | 切图资源，含多倍图 URL |
+| 其他工具 | ⏳ Handler TODO | 待实现 |
+
+### 已完成工具详情
+
+#### lanhu_get_pages
+
+- **完成时间**: 2026-05-24
+- **API 端点**: `GET /api/project/image?image_id=xxx&project_id=xxx`
+- **测试状态**: ✅ 通过（8 个页面，2 个文件夹）
+- **已知问题**: 
+  - API 路径需与 Python 原始实现一致（`/api/project/image` 而非 `/api/project/doc_info`）
+  - 需在 `config.ts` 中提前加载 dotenv
 ```typescript
 handler: async (params) => {
   // TODO: 实现具体逻辑
@@ -46,7 +63,7 @@ handler: async (params) => {
 | 1 | `lanhu_resolve_invite_link` | `src/tools/resolve-link.ts` | 无 |
 | 2 | `lanhu_get_pages` | `src/tools/get-pages.ts` | 可选: #1 |
 | 3 | `lanhu_get_designs` | `src/tools/get-designs.ts` | 可选: #1 |
-| 4 | `lanhu_get_design_slices` | `src/tools/get-slices.ts` | #3 |
+| 4 | `lanhu_get_design_slices` | `src/tools/get-slices.ts` | #3（✅ 已实现）|
 
 ### P1 - AI 分析工具（高优先级）
 
@@ -146,20 +163,25 @@ handler: async (params) => {
 
 **目标**: 实现 `lanhu_get_design_slices`，获取设计切图信息
 
+**状态**: ✅ 已完成
+
 **任务**:
-1. 调用 `/api/project/image` 获取设计图详情
-2. 调用 DDS API 获取 schema 数据
-3. 解析切图数据
-4. 生成多倍图 URL
+1. ✅ 调用 `/api/project/image` 获取设计图详情
+2. ✅ 从 DDS JSON URL 获取 Sketch/Figma 数据
+3. ✅ 递归解析切图数据
+4. ✅ 生成多倍图 URL（Web/iOS/Android）
+5. ✅ 构建 AI 工作流指南
 
 **参考**:
 - 原始实现: `lanhu_mcp_server.py` L3250-3506
-- 代码位置: `src/tools/get-slices.ts`
-- API 端点: `GET /api/project/image`, `https://dds.lanhuapp.com`
+- 代码位置: `src/tools/get-slices.ts`, `src/api/client.ts` L434-555
+- API 端点: `GET /api/project/image`, DDS JSON URL
 
 **验收标准**:
-- [ ] 返回完整的切图列表
-- [ ] 包含 1x/2x/3x 各倍率 URL
+- [x] 返回完整的切图列表
+- [x] 包含 1x/2x/3x 各倍率 URL
+- [x] 支持 Sketch 和 Figma 格式
+- [x] 构建 AI 工作流指南
 
 ---
 

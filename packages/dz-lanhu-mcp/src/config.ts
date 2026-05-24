@@ -4,6 +4,10 @@
  * 从环境变量读取配置，提供类型安全的配置对象
  */
 
+// 在模块加载时自动加载 .env 文件
+import dotenv from 'dotenv';
+dotenv.config();
+
 // Unused imports removed - will be used in future implementation
 
 // ============================================================

@@ -9,6 +9,10 @@
 
 import { FastMCPServer, runServer } from 'mcp-dev-tools';
 import { config } from './config.js';
+import { createResolveLinkTool } from './tools/resolve-link.js';
+import { createGetPagesTool } from './tools/get-pages.js';
+import { createGetDesignsTool } from './tools/get-designs.js';
+import { createGetSlicesTool } from './tools/get-slices.js';
 
 // ============================================================
 // 创建服务器实例
@@ -32,38 +36,10 @@ function registerAllTools(): void {
   // --- 需求文档分析工具 ---
   
   // 解析蓝湖邀请链接
-  // server.registerTool({
-  //   name: 'lanhu_resolve_invite_link',
-  //   description: '解析蓝湖邀请链接，获取项目、文档等基本信息',
-  //   inputSchema: {
-  //     type: 'object',
-  //     properties: {
-  //       url: { type: 'string', description: '蓝湖邀请链接' },
-  //     },
-  //     required: ['url'],
-  //   },
-  //   handler: async (params) => {
-  //     // TODO: 实现邀请链接解析逻辑
-  //     return {};
-  //   },
-  // });
+  server.registerTool(createResolveLinkTool());
 
   // 获取原型页面列表
-  // server.registerTool({
-  //   name: 'lanhu_get_pages',
-  //   description: '获取 Axure 原型的所有页面列表',
-  //   inputSchema: {
-  //     type: 'object',
-  //     properties: {
-  //       url: { type: 'string', description: '需求文档 URL' },
-  //     },
-  //     required: ['url'],
-  //   },
-  //   handler: async (params) => {
-  //     // TODO: 实现获取页面列表逻辑
-  //     return {};
-  //   },
-  // });
+  server.registerTool(createGetPagesTool());
 
   // 分析原型页面内容
   // server.registerTool({
@@ -91,21 +67,7 @@ function registerAllTools(): void {
   // --- UI 设计支持工具 ---
 
   // 获取设计稿列表
-  // server.registerTool({
-  //   name: 'lanhu_get_designs',
-  //   description: '获取 UI 设计图列表',
-  //   inputSchema: {
-  //     type: 'object',
-  //     properties: {
-  //       url: { type: 'string', description: '设计稿项目 URL' },
-  //     },
-  //     required: ['url'],
-  //   },
-  //   handler: async (params) => {
-  //     // TODO: 实现获取设计稿列表逻辑
-  //     return {};
-  //   },
-  // });
+  server.registerTool(createGetDesignsTool());
 
   // 分析设计图
   // server.registerTool({
@@ -126,23 +88,7 @@ function registerAllTools(): void {
   // });
 
   // 获取切图信息
-  // server.registerTool({
-  //   name: 'lanhu_get_design_slices',
-  //   description: '获取设计切图信息，支持批量下载切图资源',
-  //   inputSchema: {
-  //     type: 'object',
-  //     properties: {
-  //       url: { type: 'string', description: '设计稿 URL' },
-  //       designId: { type: 'string', description: '设计图 ID' },
-  //       outputDir: { type: 'string', description: '输出目录' },
-  //     },
-  //     required: ['url', 'designId'],
-  //   },
-  //   handler: async (params) => {
-  //     // TODO: 实现切图获取逻辑
-  //     return {};
-  //   },
-  // });
+  server.registerTool(createGetSlicesTool());
 
   // --- 团队协作留言板工具 ---
 

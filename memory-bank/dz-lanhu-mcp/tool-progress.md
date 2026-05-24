@@ -7,10 +7,10 @@
 ## 📊 整体进度
 
 - **MCP 工具总数**: 14 个（13 个核心 + 1 个额外）
-- **已完成**: 0 个
+- **已完成**: 3 个（lanhu_resolve_invite_link, lanhu_get_pages, lanhu_get_designs, lanhu_get_design_slices）
 - **开发中**: 0 个
-- **待开发**: 14 个
-- **进度**: 0%
+- **待开发**: 10 个
+- **进度**: 29%
 
 ---
 
@@ -43,7 +43,7 @@
 
 | 属性 | 值 |
 |------|-----|
-| **状态** | 🔴 待开发 |
+| **状态** | 🟢 已完成 |
 | **代码位置** | `packages/dz-lanhu-mcp/src/tools/get-pages.ts` |
 | **原始实现** | `lanhu_mcp_server.py` L2702-2865 |
 | **依赖工具** | `lanhu_resolve_invite_link`（可选，用户可直接传 pid） |
@@ -52,15 +52,17 @@
 **功能描述**: 获取 Axure 原型的所有页面列表
 
 **原始 Python 实现要点**:
-- 调用 `/api/project/doc_info` 获取文档信息
+- 调用 `/api/project/image` 获取文档信息（与 Python 实现一致）
 - 获取版本列表，从 `json_url` 获取项目 mapping JSON
 - 从 `sitemap.rootNodes` 递归提取页面（保留层级结构）
 - 返回页面索引、名称、路径、文件夹分组等信息
 
-**TypeScript 实现计划**:
-- 调用 `lanhuApi.get('/api/project/doc_info')`
+**TypeScript 实现要点**:
+- 调用 `lanhuApi.getPagesList(docId, teamId, projectId)` 方法
+- API 路径: `/api/project/image`（使用 `pid` 和 `image_id` 参数）
 - 解析 sitemap 递归提取页面
 - 返回页面列表（含文件夹分组、层级信息）
+- 支持纯文件夹节点（type=Folder 且无 url）的层级管理
 
 ---
 
@@ -68,7 +70,7 @@
 
 | 属性 | 值 |
 |------|-----|
-| **状态** | 🔴 待开发 |
+| **状态** | 🟢 已完成 |
 | **代码位置** | `packages/dz-lanhu-mcp/src/tools/get-designs.ts` |
 | **原始实现** | `lanhu_mcp_server.py` L2345-2527 |
 | **依赖工具** | `lanhu_resolve_invite_link`（可选） |
@@ -77,14 +79,16 @@
 **功能描述**: 获取 UI 设计图列表
 
 **原始 Python 实现要点**:
-- 调用 `/api/project/images` 获取图片列表
-- 调用 `/api/project/project_sectors` 获取分组信息
-- 关联图片与分组，返回设计图列表
+- 调用 `/api/project/stage_design` 获取设计稿列表
+- 返回设计稿基本信息（ID、名称、缩略图、创建/更新时间等）
 
-**TypeScript 实现计划**:
-- 调用 `lanhuApi.get('/api/project/images')`
-- 调用 `lanhuApi.get('/api/project/project_sectors')`
-- 返回设计图列表（含分组信息）
+**TypeScript 实现要点**:
+- 调用 `lanhuApi.getDesignsList(stageId, teamId, projectId)` 方法
+- API 路径: `/api/project/stage_design`
+- 返回设计稿列表（含 ID、名称、缩略图 URL、创建/更新时间）
+- 需要 URL 包含 `stage_id` 参数
+
+**测试状态**: ⏳ 待测试（需要用户提供实际的蓝湖设计稿 URL）
 
 ---
 
@@ -92,10 +96,11 @@
 
 | 属性 | 值 |
 |------|-----|
-| **状态** | 🔴 待开发 |
+| **状态** | 🟢 已完成 |
 | **代码位置** | `packages/dz-lanhu-mcp/src/tools/get-slices.ts` |
 | **原始实现** | `lanhu_mcp_server.py` L3250-3506 |
-| **依赖工具** | `lanhu_get_designs` |
+| **API 实现** | `packages/dz-lanhu-mcp/src/api/client.ts` L434-555 (`getDesignSlicesInfo`) |
+| **依赖工具** | `lanhu_get_designs`（通过 getDesignsList 获取设计稿列表） |
 | **被依赖工具** | 无 |
 
 **功能描述**: 获取设计切图信息，支持批量下载切图资源
@@ -106,10 +111,14 @@
 - 调用 `_build_scale_urls()` 生成多倍图 URL
 - 返回切图列表（含各倍率 URL）
 
-**TypeScript 实现计划**:
-- 调用 `lanhuApi.get('/api/project/image')` 获取设计图详情
-- 调用 DDS API 获取 schema
-- 解析切图数据并生成多倍图 URL
+**TypeScript 实现要点**:
+- 调用 `lanhuApi.getDesignSlicesInfo(imageId, teamId, projectId, includeMetadata)` 方法
+- API 路径: `/api/project/image` + DDS JSON URL
+- 递归遍历图层提取切图（支持 Sketch 和 Figma）
+- 生成多倍图 URL（Web 1x/2x/3x, iOS @1x/@2x/@3x, Android mdpi~xxxhdpi）
+- 构建 AI 工作流指南（平台选择、文件命名、环境检测）
+
+**测试状态**: ⏳ 待测试（需要用户提供实际的蓝湖设计稿 URL）
 
 ---
 

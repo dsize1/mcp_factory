@@ -2,9 +2,299 @@
 
 本文档记录 dz-lanhu-mcp 项目的远程 API 地址、端点信息和输入输出格式，用于后续测试基准对照。
 
-> **⚠️ 注意**: 测试暂不启动，本文档仅作为参考基准使用。
+---
+
+## 📝 测试经验总结 (lanhu_get_pages)
+
+> **完成时间**: 2026-05-24
+> **工具**: lanhu_get_pages
+> **状态**: ✅ 已完成并验证
+
+### 1. ESLint 错误修复
+
+#### 问题 1: 未使用的导入
+
+**错误信息**: `'Logger' is defined but never used`
+
+**原因**: 在 `src/tools/get-pages.ts` 中导入了 `Logger` 但未使用。
+
+**解决方案**: 移除未使用的导入语句。
+
+```typescript
+// 错误
+import { lanhuApi } from '../api/client.js';
+import { Logger } from '../utils/logger.js';
+
+// 正确
+import { lanhuApi } from '../api/client.js';
+```
 
 ---
+
+#### 问题 2: ES Module 中使用 `dirname`
+
+**错误信息**: `__dirname` 不能在 ES 模块中使用
+
+**原因**: 项目使用 ES Module (`"type": "module"`)，而 `__dirname` 是 CommonJS 变量。
+
+**解决方案**: 使用 `import.meta.url` 替代 `__dirname`。
+
+```typescript
+// 错误
+const configDir = path.dirname(__filename);
+const configPath = path.join(configDir, '../config.js');
+await import(configPath);
+
+// 正确
+const fileUrl = import.meta.url;
+const configDir = path.dirname(fileURLToPath(fileUrl));
+const configPath = path.join(configDir, '../config.js');
+await import(configPath);
+```
+
+**关键步骤**:
+1. 从 `node:url` 导入 `fileURLToPath`
+2. 从 `node:path` 导入 `dirname` 和 `join`（如果尚未导入）
+3. 使用 `import.meta.url` 替代 `__filename`
+4. 使用 `path.dirname()` 替代 `path.dirname(__filename)`
+
+---
+
+### 2. 蓝湖 API 调用修正
+
+#### 问题: 错误的 API 端点
+
+**原始错误**: 使用 `/api/project/doc_info` 导致 404 错误
+
+**原因**: 蓝湖实际使用的 API 端点是 `/api/project/image`，而非 `/api/project/doc_info`。
+
+**解决方案**: 修正 API 路径为 `/api/project/image`，与 Python 原始实现保持一致。
+
+```typescript
+// 错误
+const response = await this.request.get<DocInfoResponse>('/api/project/doc_info', params);
+
+// 正确
+const response = await this.request.get<DocInfoResponse>('/api/project/image', params);
+```
+
+**经验教训**: 
+- **始终对照原始 Python 实现验证 API 路径**
+- Python 原始代码中使用的是 `/api/project/image?image_id=xxx&project_id=xxx`
+- 不要仅依赖注释或文档中的 API 路径描述
+
+---
+
+### 3. 类型定义修复
+
+#### 问题: `LanhuExtractor` 没有 `parseUrl` 属性
+
+**错误信息**: `Property 'parseUrl' does not exist on type 'typeof LanhuExtractor'`
+
+**原因**: `LanhuExtractor` 类中没有 `parseUrl` 静态方法，实际 URL 解析是通过 `extractProjectIds()` 函数实现的。
+
+**解决方案**: 使用 `extractProjectIds()` 函数替代。
+
+```typescript
+// 错误
+const params = LanhuExtractor.parseUrl(testUrl);
+
+// 正确
+const params = extractProjectIds(testUrl);
+```
+
+---
+
+### 4. dotenv 环境变量加载顺序问题
+
+#### 问题: `LANHU_COOKIE` 为 `your_lanhu_cookie_here`
+
+**现象**: 构建后运行测试，Cookie 值未正确加载
+
+**原因分析**:
+1. TypeScript 模块按导入顺序初始化
+2. `config.ts` 在 `.env` 文件加载之前就被导入了
+3. `LanhuConfig` 读取的是默认值而非环境变量
+
+**解决方案**: 在 `config.ts` 模块顶层主动加载 dotenv。
+
+```typescript
+// src/config.ts
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env' });  // 在模块加载时立即加载 .env
+```
+
+**关键原则**:
+- **dotenv 必须在任何其他模块导入 config.ts 之前加载**
+- 测试脚本中不需要再次加载 dotenv（但也不会出错）
+- 确保 `.env` 文件路径正确（相对于工作目录）
+
+**验证方法**:
+```bash
+# 在 config.ts 中添加临时日志验证
+console.log('LANHU_COOKIE loaded:', process.env.LANHU_COOKIE?.substring(0, 20) + '...');
+```
+
+---
+
+### 5. 测试脚本编写规范
+
+#### 推荐结构
+
+```typescript
+/**
+ * 测试工具名称
+ * 
+ * 运行方式: npx tsx tests/test-tool-name.ts
+ */
+
+// 1. 加载环境变量
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env' });
+
+// 2. 导入模块
+import { toolName } from '../src/api/client.js';
+
+// 3. 定义测试参数
+const TEST_URL = process.argv[2] || process.env.TEST_URL || 'default-url';
+
+// 4. URL 解析辅助函数（如需要）
+function extractParams(url: string): Record<string, string> {
+  // ...
+}
+
+// 5. 主测试函数
+async function test() {
+  console.log('=== 工具名称测试 ===\n');
+  
+  try {
+    // 6. 执行测试
+    const result = await toolNameMethod(params);
+    
+    // 7. 输出结果
+    console.log('\n=== 测试成功 ===');
+    console.log('数据:', JSON.stringify(result, null, 2));
+  } catch (error) {
+    console.error('\n=== 测试失败 ===');
+    console.error('错误:', error.message);
+    process.exit(1);
+  }
+}
+
+test();
+```
+
+#### 测试脚本存放位置
+
+```
+packages/dz-lanhu-mcp/
+├── tests/
+│   └── test-get-pages.ts      # 测试脚本统一存放位置
+```
+
+#### package.json 测试脚本
+
+```json
+{
+  "scripts": {
+    "test:pages": "tsx tests/test-get-pages.ts"
+  }
+}
+```
+
+---
+
+### 6. URL 解析注意事项
+
+蓝湖 URL 有两种常见格式：
+
+#### Hash 路由格式
+```
+https://lanhuapp.com/web/#/item/project/product?tid=xxx&pid=xxx&docId=xxx
+```
+
+#### 查询参数格式
+```
+https://lanhuapp.com/link/?pid=xxx&tid=xxx&doc_id=xxx
+```
+
+**解析策略**:
+1. 首先尝试从 hash 部分 (`#/item/...?params`) 提取参数
+2. 如果 hash 中没有，尝试从常规查询字符串提取
+3. 支持驼峰命名 (`docId`) 和下划线命名 (`doc_id`)
+
+---
+
+### 7. API 响应数据结构
+
+`lanhu_get_pages` 返回的标准格式：
+
+```typescript
+interface GetPagesResult {
+  document_id: string;           // 文档 ID
+  document_name: string;         // 文档名称
+  document_type: string;         // 文档类型 (axure)
+  total_pages: number;           // 页面总数
+  max_level: number;             // 最大层级深度
+  pages_with_children: number;   // 有子页面的数量
+  pages: PageItem[];             // 页面列表
+  folder_statistics: Record<string, number>;  // 文件夹统计
+}
+
+interface PageItem {
+  index: number;                 // 页面索引
+  name: string;                  // 页面名称
+  page_id: string;               // 页面 ID
+  folder: string;                // 所属文件夹
+  level: number;                 // 层级深度 (0 = 根级)
+  path: string;                  // 完整路径
+  has_children: boolean;         // 是否有子页面
+  width: number;                 // 页面宽度
+  height: number;                // 页面高度
+}
+```
+
+---
+
+## 📌 通用测试 Checklist
+
+在实现和测试新工具时，请对照以下清单：
+
+- [ ] ESLint 检查通过（无未使用导入、无类型错误）
+- [ ] TypeScript 编译通过（`pnpm build`）
+- [ ] 环境变量正确加载（.env 文件存在且内容正确）
+- [ ] API 端点与 Python 原始实现一致
+- [ ] URL 解析支持所有蓝湖 URL 格式
+- [ ] 错误处理完善（网络错误、API 错误、数据解析错误）
+- [ ] 测试脚本结构规范（dotenv 加载 → 导入 → 测试 → 输出）
+- [ ] 测试结果符合预期格式
+
+---
+
+## ⚙️ 测试环境配置
+
+### 环境变量
+
+```bash
+# packages/dz-lanhu-mcp/.env
+LANHU_COOKIE=your_actual_cookie_here
+HTTP_TIMEOUT=30000
+```
+
+### 运行测试
+
+```bash
+# 运行特定工具测试
+pnpm test:pages
+
+# 或直接在 tests/ 目录运行
+cd packages/dz-lanhu-mcp
+npx tsx tests/test-get-pages.ts
+```
+
+---
+
+> **最后更新**: 2026-05-24 (lanhu_get_pages 测试经验)
 
 ## 🌐 远程 API 地址
 

@@ -893,3 +893,65 @@ export interface InviteLinkInfoResult {
   /** 原始响应数据 */
   raw: any;
 }
+
+// ============================================================
+// 页面列表相关类型
+// ============================================================
+
+/** 页面列表项（从 sitemap 提取） */
+export interface LanhuSitemapPage {
+  /** 页面序号 */
+  index: number;
+  /** 页面名称 */
+  name: string;
+  /** 页面文件名/路径 */
+  filename: string;
+  /** 页面 ID */
+  id: string;
+  /** 页面类型 */
+  type: string;
+  /** 层级深度（0 为根） */
+  level: number;
+  /** 所属文件夹 */
+  folder: string;
+  /** 完整路径 */
+  path: string;
+  /** 是否有子页面 */
+  has_children: boolean;
+}
+
+/** 页面列表返回类型 */
+export interface PagesListResult {
+  /** 文档 ID */
+  document_id: string;
+  /** 文档名称 */
+  document_name: string;
+  /** 文档类型 */
+  document_type: string;
+  /** 页面总数 */
+  total_pages: number;
+  /** 最大层级深度 */
+  max_level: number;
+  /** 有子页面的页面数 */
+  pages_with_children: number;
+  /** 文件夹统计 */
+  folder_statistics: Record<string, number>;
+  /** 页面列表 */
+  pages: LanhuSitemapPage[];
+  /** 创建时间 */
+  create_time?: string;
+  /** 更新时间 */
+  update_time?: string;
+  /** 版本总数 */
+  total_versions?: number;
+  /** 最新版本信息 */
+  latest_version?: string;
+  /** 创建者名称 */
+  creator_name?: string;
+  /** 文件夹名称 */
+  folder_name?: string;
+  /** 项目路径 */
+  project_path?: string;
+  /** 成员数量 */
+  member_count?: number;
+}

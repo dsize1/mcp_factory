@@ -43,6 +43,8 @@ import type {
   DesignSlicesResult,
   MessageActionResult,
   InviteLinkInfoResult,
+  PagesListResult,
+  LanhuSitemapPage,
 } from '../types.js';
 
 // ============================================================
@@ -761,6 +763,173 @@ class LanhuAPIClient {
       folderName: data.folder_name,
       creatorName: data.creator_name,
       raw: data,
+    };
+  }
+
+  // ============================================================
+  // 页面/原型 API - 页面列表
+  // ============================================================
+
+  /**
+   * 获取文档的所有页面列表（仅包含sitemap中的页面）
+   * 对应 Python: get_pages_list
+   * 
+   * API 流程:
+   * 1. GET /api/project/doc_versions - 获取文档版本信息
+   * 2. GET {json_url} - 获取项目 mapping JSON (sitemap)
+   * 3. 递归提取 sitemap.rootNodes 中的页面
+   * 4. GET /api/project/multi_info - 获取项目信息（可选）
+   */
+  async getPagesList(docId: string, teamId?: string, projectId?: string): Promise<PagesListResult> {
+    // 1. 获取文档信息（使用 /api/project/image API，与 Python 实现一致）
+    const imageParams: Record<string, string> = { pid: projectId || '', image_id: docId };
+    if (teamId) {
+      imageParams.team_id = teamId;
+    }
+    
+    // Python 的 /api/project/image 返回 {code: 0|'0'|'00000', msg: '', data: {...}}
+    // 注意：Python 使用 'data' 字段，TypeScript 类型使用 'result'
+    const docResponse = await this.request.get<any>('api/project/image', imageParams);
+    const docResult = docResponse.data as any;
+    
+    // Python 返回 code=0 或 code='0' 或 code='00000' 都表示成功
+    const code = docResult.code;
+    const success = code === 0 || code === '0' || code === '00000';
+    
+    if (!success) {
+      throw new Error(`获取文档信息失败: ${docResult.msg} (code=${code})`);
+    }
+    
+    // Python: return data.get('data') or data.get('result', {})
+    const docData = docResult.data || docResult.result;
+    const versions = docData.versions || [];
+    
+    if (versions.length === 0) {
+      throw new Error('文档版本信息不存在');
+    }
+    
+    const latestVersion = versions[0];
+    const jsonUrl = latestVersion.json_url;
+    
+    if (!jsonUrl) {
+      throw new Error('映射 JSON URL 不存在');
+    }
+    
+    // 2. 下载项目 mapping JSON
+    const mappingResponse = await this.request.get<any>(jsonUrl);
+    const projectMapping = mappingResponse.data as any;
+    
+    // 3. 从 sitemap 提取页面列表
+    const sitemap = projectMapping.sitemap || {};
+    const rootNodes = sitemap.rootNodes || [];
+    
+    // 递归提取所有页面
+    const pages: LanhuSitemapPage[] = [];
+    
+    const extractPages = (
+      nodes: any[],
+      parentPath: string,
+      level: number,
+      parentFolder: string
+    ): void => {
+      for (const node of nodes) {
+        const pageName = node.pageName || '';
+        const url = node.url || '';
+        const nodeId = node.id || '';
+        const nodeType = node.type || 'Wireframe';
+        
+        // 构建当前路径
+        const currentPath = parentPath ? `${parentPath}/${pageName}` : pageName;
+        
+        // 判断是否为纯文件夹（type=Folder 且 无url）
+        const isPureFolder = nodeType === 'Folder' && !url;
+        
+        if (pageName && url) {
+          // 这是一个页面（有url的都是页面）
+          pages.push({
+            index: pages.length + 1,
+            name: pageName,
+            filename: url,
+            id: nodeId,
+            type: nodeType,
+            level: level,
+            folder: parentFolder || '根目录',
+            path: currentPath,
+            has_children: Array.isArray(node.children) && node.children.length > 0,
+          });
+        }
+        
+        // 递归处理子节点
+        const children = node.children || [];
+        if (children.length > 0) {
+          const nextFolder = isPureFolder ? pageName : parentFolder;
+          extractPages(children, currentPath, level + 1, nextFolder);
+        }
+      }
+    };
+    
+    extractPages(rootNodes, '', 0, '');
+    
+    // 4. 统计信息
+    const folderStats: Record<string, number> = {};
+    let maxLevel = 0;
+    let pagesWithChildren = 0;
+    
+    for (const page of pages) {
+      folderStats[page.folder] = (folderStats[page.folder] || 0) + 1;
+      maxLevel = Math.max(maxLevel, page.level);
+      if (page.has_children) {
+        pagesWithChildren += 1;
+      }
+    }
+    
+    // 5. 获取项目信息（可选）
+    let creatorName: string | undefined;
+    let folderName: string | undefined;
+    let projectPath: string | undefined;
+    let memberCount: number | undefined;
+    
+    try {
+      const multiParams: Record<string, string | number> = {
+        project_id: projectId || '',
+        doc_info: 1,
+      };
+      if (teamId) {
+        multiParams.team_id = teamId;
+      }
+      
+      const multiResponse = await this.request.get<LanhuApiResponse<any>>('api/project/multi_info', multiParams as any);
+      const multiResult = multiResponse.data as LanhuApiResponse<any>;
+      
+      if (multiResult.code === '00000') {
+        const projectInfo = multiResult.result || {};
+        creatorName = projectInfo.creator_name;
+        folderName = projectInfo.folder_name;
+        projectPath = projectInfo.save_path;
+        memberCount = projectInfo.member_cnt;
+      }
+    } catch {
+      // 项目信息获取失败不影响主流程
+    }
+    
+    // 6. 构建返回结果
+    return {
+      document_id: docData.id || docId,
+      document_name: docData.name || '未命名文档',
+      document_type: docData.type || 'axure',
+      total_pages: pages.length,
+      max_level: maxLevel,
+      pages_with_children: pagesWithChildren,
+      folder_statistics: folderStats,
+      pages,
+      create_time: docData.create_time,
+      update_time: docData.update_time,
+      total_versions: versions.length,
+      latest_version: latestVersion.version_info,
+      creator_name: creatorName,
+      folder_name: folderName,
+      project_path: projectPath,
+      member_count: memberCount,
     };
   }
 

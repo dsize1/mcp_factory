@@ -80,6 +80,19 @@ pnpm build
 pnpm start
 ```
 
+### 运行测试
+
+```bash
+# 测试 lanhu_get_pages 工具
+pnpm test:pages
+
+# 使用自定义链接测试
+pnpm test:pages "https://lanhuapp.com/web/#/item/project/product?docId=YOUR_DOC_ID"
+
+# 或使用环境变量
+LANHU_TEST_URL="https://lanhuapp.com/..." pnpm test:pages
+```
+
 ### 连接到 AI 客户端
 
 在支持 MCP 的 AI 客户端（如 Cursor、Windsurf、Claude Code）中配置：
@@ -101,20 +114,19 @@ pnpm start
 
 ## 🛠️ 可用工具列表
 
-| 工具名称 | 功能描述 | 使用场景 |
-|---------|---------|---------|
-| `lanhu_resolve_invite_link` | 解析邀请链接 | 用户提供分享链接时 |
-| `lanhu_get_pages` | 获取原型页面列表 | 分析需求文档前必调用 |
-| `lanhu_get_ai_analyze_page_result` | 分析原型页面内容 | 提取需求细节 |
-| `lanhu_get_designs` | 获取 UI 设计图列表 | 查看设计稿前必调用 |
-| `lanhu_get_ai_analyze_design_result` | 分析 UI 设计图 | 查看设计稿参数 |
-| `lanhu_get_design_slices` | 获取切图信息 | 下载图标、素材 |
-| `lanhu_say` | 发布留言 | 团队协作、@提醒 |
-| `lanhu_say_list` | 查看留言列表 | 查询历史消息 |
-| `lanhu_say_detail` | 查看留言详情 | 查看完整内容 |
-| `lanhu_say_edit` | 编辑留言 | 修改已发布消息 |
-| `lanhu_say_delete` | 删除留言 | 移除消息 |
-| `lanhu_get_members` | 查看协作者 | 查看团队成员 |
+| 工具名称 | 功能描述 | 使用场景 | 状态 |
+|---------|---------|---------|------|
+| `lanhu_resolve_invite_link` | 解析邀请链接 | 用户提供分享链接时 | ✅ |
+| `lanhu_get_pages` | 获取原型页面列表 | 分析需求文档前必调用 | ✅ |
+| `lanhu_get_ai_analyze_page_result` | 分析原型页面内容 | 提取需求细节 | ⏳ |
+| `lanhu_get_designs` | 获取 UI 设计图列表 | 查看设计稿前必调用 | ⏳ |
+| `lanhu_get_design_slices` | 获取切图信息 | 下载图标、素材 | ✅ |
+| `lanhu_say` | 发布留言 | 团队协作、@提醒 | ⏳ |
+| `lanhu_say_list` | 查看留言列表 | 查询历史消息 | ⏳ |
+| `lanhu_say_detail` | 查看留言详情 | 查看完整内容 | ⏳ |
+| `lanhu_say_edit` | 编辑留言 | 修改已发布消息 | ⏳ |
+| `lanhu_say_delete` | 删除留言 | 移除消息 | ⏳ |
+| `lanhu_get_members` | 查看协作者 | 查看团队成员 | ⏳ |
 
 ## 📁 项目结构
 
@@ -125,6 +137,8 @@ dz-lanhu-mcp/
 ├── .env.example              # 环境变量示例
 ├── .gitignore
 ├── README.md                 # 本文件
+├── tests/                    # 测试脚本
+│   └── test-get-pages.ts     # lanhu_get_pages 工具测试
 └── src/
     ├── index.ts              # 入口文件，注册所有工具和资源
     ├── config.ts             # 配置管理（环境变量、默认值）

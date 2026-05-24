@@ -295,16 +295,17 @@ class LanhuRequest {
    * @param startTime 请求开始时间
    * @returns 响应对象 Promise
    */
-  private sendRequest<T>(
+  private async sendRequest<T>(
     options: RequestOptions,
     body: unknown,
     startTime: number,
   ): Promise<HttpResponse<T>> {
+    const isHttps = options.port === 443 || options.hostname?.includes('https');
+    const httpModule: any = isHttps ? await import('https') : await import('http');
+    const httpMod = httpModule.default || httpModule;
+    
     return new Promise((resolve, reject) => {
-      const isHttps = options.port === 443 || options.hostname?.includes('https');
-      const httpModule = isHttps ? require('https') : require('http');
-      
-      const req = httpModule.request(options, (res: import('http').IncomingMessage) => {
+      const req = httpMod.request(options, (res: import('http').IncomingMessage) => {
         const chunks: Buffer[] = [];
         
         res.on('data', (chunk: Buffer) => {
@@ -399,11 +400,12 @@ class LanhuRequest {
       headers['Cookie'] = cookieValue;
     }
     
+    const isHttps = parsedUrl.protocol === 'https:';
+    const mod: any = isHttps ? await import('https') : await import('http');
+    const modActual = mod.default || mod;
+    
     return new Promise((resolve, reject) => {
-      const isHttps = parsedUrl.protocol === 'https:';
-      const mod = isHttps ? require('https') : require('http');
-      
-      const req = mod.request({
+      const req = modActual.request({
         hostname: parsedUrl.hostname,
         port: parsedUrl.port || (isHttps ? 443 : 80),
         path: parsedUrl.pathname + parsedUrl.search,
