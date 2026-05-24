@@ -81,16 +81,17 @@ export function createAnalyzePageTool(): ToolHandler {
       }
 
       try {
-        // 2. 获取页面列表以找到对应页面的 HTML 文件
+        // 2. 使用 docId 获取文档详情（优先使用 URL 中的 docId，其次使用 pageId 作为 docId）
+        const docId = parsedUrl.docId || pageId;
         const productDetail = await lanhuApi.getProductDetail(
-          pageId,
+          docId,
           parsedUrl.teamId,
-          parsedUrl.productId
+          parsedUrl.projectId
         );
 
         // 3. 获取页面列表
         const pagesList = await lanhuApi.getPagesList(
-          parsedUrl.productId || '',
+          docId,
           parsedUrl.teamId,
           parsedUrl.projectId
         );
@@ -109,7 +110,16 @@ export function createAnalyzePageTool(): ToolHandler {
         }
 
         // 4. 获取 HTML 内容
-        const htmlContent = await lanhuApi.getPageHtml(targetPage.filename);
+        // 使用 signMd5（与 Python 版本一致）：f"{CDN_URL}/{sign_md5}"
+        // 如果没有 signMd5，回退到使用 filename
+        const htmlKey = targetPage.signMd5 || targetPage.filename;
+        const htmlContent = await lanhuApi.getPageHtml(htmlKey);
+
+        // 打印 HTML 内容用于调试
+        console.log('=== HTML Content Start ===');
+        console.log('HTML length:', htmlContent?.length);
+        console.log('HTML preview:', htmlContent?.substring(0, 2000));
+        console.log('=== HTML Content End ===');
 
         if (!htmlContent) {
           return JSON.stringify({

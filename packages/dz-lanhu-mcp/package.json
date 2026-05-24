@@ -17,7 +17,12 @@
     "start": "node dist/index.js",
     "clean": "rm -rf dist",
     "type-check": "tsc --noEmit",
-    "test:pages": "tsx tests/test-get-pages.ts"
+    "test:pages": "tsx tests/test-get-pages.ts",
+    "test:ai:page": "tsx tests/test-ai-tools.ts page",
+    "test:ai:design": "tsx tests/test-ai-tools.ts design",
+    "test:ai:schema": "tsx tests/test-ai-tools.ts schema",
+    "test:ai": "tsx tests/test-ai-tools.ts",
+    "test:mcp-server": "node tests/test-mcp-server.js"
   },
   "keywords": [
     "mcp",

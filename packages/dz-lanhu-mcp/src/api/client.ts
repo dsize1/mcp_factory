@@ -261,29 +261,39 @@ class LanhuAPIClient {
 
   /**
    * 获取产品文档详情
-   * API: GET /api/project/doc_versions
+   * API: GET /api/project/image
+   * 
+   * 返回文档基本信息，与 Python 实现保持一致
    */
-  async getProductDetail(productId: string, teamId?: string, projectId?: string): Promise<ProductDetailResult> {
-    const project_Id = projectId || teamId;
-    const params: Record<string, string> = { doc_id: productId };
-    if (project_Id) {
-      params.project_id = project_Id;
+  async getProductDetail(docId: string, teamId?: string, projectId?: string): Promise<ProductDetailResult> {
+    // 使用 /api/project/image API，参数为 pid 和 image_id
+    const params: Record<string, string> = {
+      image_id: docId,
+    };
+    if (projectId) {
+      params.pid = projectId;
+    } else if (teamId) {
+      params.team_id = teamId;
     }
     
-    const response = await this.request.get<LanhuApiResponse<any>>('api/project/doc_versions', params);
-    const result = response.data as LanhuApiResponse<any>;
+    const response = await this.request.get<any>('api/project/image', params);
+    const result = response.data as any;
     
-    if (result.code !== '00000') {
-      throw new Error(`获取产品详情失败: ${result.msg}`);
+    // 兼容多种 code 格式: '00000', '0', 0
+    const code = result?.code;
+    const success = code === '00000' || code === '0' || code === 0;
+    
+    if (!success) {
+      throw new Error(`获取产品详情失败: ${result?.msg || result?.message || 'unknown error'}`);
     }
     
-    const data = result.result;
+    const data = result.result || result.data || {};
     
     return {
-      id: data.id || productId,
+      id: data.id || docId,
       name: data.name || '未命名',
       type: data.type || 'axure',
-      pages: [], // 需要另外调用获取页面列表
+      pages: [], // 需要另外调用 getPagesList 获取页面列表
       createdAt: data.create_time,
       updatedAt: data.update_time,
     };
@@ -305,7 +315,7 @@ class LanhuAPIClient {
     } else {
       url = `${CDN_URL}/${md5OrUrl}`;
     }
-    
+    console.log('HTML url:', url);
     const response = await this.request.get<string>(url);
     return response.data as unknown as string;
   }
@@ -823,6 +833,11 @@ class LanhuAPIClient {
     const sitemap = projectMapping.sitemap || {};
     const rootNodes = sitemap.rootNodes || [];
     
+    // 从 projectMapping.pages 获取 HTML 的 sign_md5（与 Python 版本一致）
+    // Python 中: pages = project_mapping.get('pages', {})
+    // 每个页面: {html: {sign_md5: 'xxx'}, mapping_md5: 'yyy'}
+    const mappingPages = projectMapping.pages || {};
+    
     // 递归提取所有页面
     const pages: LanhuSitemapPage[] = [];
     
@@ -846,10 +861,17 @@ class LanhuAPIClient {
         
         if (pageName && url) {
           // 这是一个页面（有url的都是页面）
+          // 从 mappingPages 中获取 sign_md5（HTML 文件的 CDN key）
+          // Python: html_data = page_info.get('html', {}); sign_md5 = html_data.get('sign_md5', '')
+          const pageMappingInfo = mappingPages[url];
+          const htmlData = pageMappingInfo?.html || {};
+          const signMd5 = htmlData.sign_md5 || '';
+          
           pages.push({
             index: pages.length + 1,
             name: pageName,
             filename: url,
+            signMd5: signMd5 || undefined,
             id: nodeId,
             type: nodeType,
             level: level,

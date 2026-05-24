@@ -904,8 +904,10 @@ export interface LanhuSitemapPage {
   index: number;
   /** 页面名称 */
   name: string;
-  /** 页面文件名/路径 */
+  /** 页面文件名/路径（sitemap 中的 url 字段，可能不是 CDN key） */
   filename: string;
+  /** 页面 HTML 的 CDN key（sign_md5，用于下载 HTML） */
+  signMd5?: string;
   /** 页面 ID */
   id: string;
   /** 页面类型 */

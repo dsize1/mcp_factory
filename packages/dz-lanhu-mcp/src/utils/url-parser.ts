@@ -99,6 +99,13 @@ export function formatLanhuTime(rfc2822String?: string): string | undefined {
  * 解析蓝湖 URL
  * 
  * 从 URL 中提取项目 ID、文档 ID、页面 ID 等信息
+ * 支持多种 URL 格式：
+ * - https://lanhuapp.com/web/#/item/project/product?tid=xxx&pid=xxx&docId=xxx&pageId=xxx
+ * - https://lanhuapp.com/invite/xxx
+ * - https://lanhuapp.com/product/<productId>
+ * - https://lanhuapp.com/doc/<docId>/<productId>
+ * - https://lanhuapp.com/design/<designId>
+ * - https://lanhuapp.com/stage?pid=xxx
  * 
  * @param url - 蓝湖 URL 字符串
  * @returns 解析后的 URL 信息
@@ -126,6 +133,49 @@ export function parseLanhuUrl(url: string): ParsedLanhuUrl {
     url,
     type: 'product' as LanhuUrlType,
   };
+
+  // 蓝湖 URL 查询参数可能在 hash 中，如: /web/#/item/project/product?tid=xxx&pid=xxx
+  // 需要从 hash 中提取查询参数
+  let hashParams: Record<string, string> = {};
+  if (parsed.hash) {
+    const hashQueryMatch = parsed.hash.match(/\?(.+)/);
+    if (hashQueryMatch) {
+      const hashQueryStr = hashQueryMatch[1];
+      const params = new URLSearchParams(hashQueryStr);
+      params.forEach((value, key) => {
+        hashParams[key] = value;
+      });
+    }
+  }
+
+  // 优先从 URL 查询参数或 hash 参数中提取 tid, pid, docId, pageId, image_id
+  const queryParams = parsed.searchParams;
+  const getParam = (key: string) => queryParams.get(key) || hashParams[key] || undefined;
+
+  const tid = getParam('tid');
+  const pid = getParam('pid') || getParam('project_id');
+  const docId = getParam('docId') || getParam('doc_id') || getParam('image_id');
+  const pageId = getParam('pageId') || getParam('page_id');
+  const stageId = getParam('stage_id');
+
+  // 如果查询参数中有有效信息，优先使用这些参数
+  if (tid || pid || docId || pageId) {
+    result.teamId = tid || undefined;
+    result.projectId = pid || undefined;
+    result.docId = docId || undefined;
+    result.pageId = pageId || undefined;
+
+    // 如果只有 tid 和 pid，没有 docId，尝试从 API 获取文档信息
+    if (tid && pid && !docId) {
+      return result;
+    }
+
+    // 如果有 docId，确定这是产品文档类型
+    if (docId) {
+      result.type = 'product';
+      return result;
+    }
+  }
 
   const pathParts = parsed.pathname.split('/').filter(Boolean);
 
