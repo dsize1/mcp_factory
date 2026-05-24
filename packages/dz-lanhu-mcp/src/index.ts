@@ -13,6 +13,8 @@ import { createResolveLinkTool } from './tools/resolve-link.js';
 import { createGetPagesTool } from './tools/get-pages.js';
 import { createGetDesignsTool } from './tools/get-designs.js';
 import { createGetSlicesTool } from './tools/get-slices.js';
+import { createAnalyzePageTool } from './tools/lanhu-get-ai-analyze-page-result.js';
+import { createAnalyzeDesignTool } from './tools/lanhu-get-ai-analyze-design-result.js';
 
 // ============================================================
 // 创建服务器实例
@@ -42,27 +44,7 @@ function registerAllTools(): void {
   server.registerTool(createGetPagesTool());
 
   // 分析原型页面内容
-  // server.registerTool({
-  //   name: 'lanhu_get_ai_analyze_page_result',
-  //   description: '分析原型页面内容，支持开发/测试/探索三种模式',
-  //   inputSchema: {
-  //     type: 'object',
-  //     properties: {
-  //       url: { type: 'string', description: '需求文档 URL' },
-  //       pageId: { type: 'string', description: '页面 ID' },
-  //       mode: { 
-  //         type: 'string', 
-  //         enum: ['development', 'testing', 'explore'],
-  //         description: '分析模式：development=开发视角, testing=测试视角, explore=快速探索'
-  //       },
-  //     },
-  //     required: ['url', 'pageId'],
-  //   },
-  //   handler: async (params) => {
-  //     // TODO: 实现页面分析逻辑
-  //     return {};
-  //   },
-  // });
+  server.registerTool(createAnalyzePageTool());
 
   // --- UI 设计支持工具 ---
 
@@ -70,22 +52,7 @@ function registerAllTools(): void {
   server.registerTool(createGetDesignsTool());
 
   // 分析设计图
-  // server.registerTool({
-  //   name: 'lanhu_get_ai_analyze_design_result',
-  //   description: '分析 UI 设计图，获取详细设计参数和 HTML+CSS 代码',
-  //   inputSchema: {
-  //     type: 'object',
-  //     properties: {
-  //       url: { type: 'string', description: '设计稿 URL' },
-  //       designId: { type: 'string', description: '设计图 ID' },
-  //     },
-  //     required: ['url', 'designId'],
-  //   },
-  //   handler: async (params) => {
-  //     // TODO: 实现设计图分析逻辑
-  //     return {};
-  //   },
-  // });
+  server.registerTool(createAnalyzeDesignTool());
 
   // 获取切图信息
   server.registerTool(createGetSlicesTool());

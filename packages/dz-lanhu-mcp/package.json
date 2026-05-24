@@ -31,10 +31,11 @@
   "license": "MIT",
   "dependencies": {
     "dotenv": "^17.4.2",
-    "mcp-dev-tools": "workspace:*"
+    "mcp-dev-tools": "workspace:*",
+    "playwright": "^1.60.0"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
+    "@types/node": "^20.19.41",
     "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
